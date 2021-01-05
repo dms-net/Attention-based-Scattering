@@ -158,7 +158,7 @@ def load_citation(dataset_str="cora", normalization="AugNormAdj", cuda=True):
     print('Loading')
     adj_sct2 = scattering1st(adj_p,2)
     print('SCT 2 done')
-    adj_sct4 = scattering1st(adj_p,3)
+    adj_sct4 = scattering1st(adj_p,4)
     print('SCT 4 done')
     adj_p = sparse_mx_to_torch_sparse_tensor(adj_p)
     A_tilde = sparse_mx_to_torch_sparse_tensor(A_tilde)
@@ -184,10 +184,25 @@ def accuracy(output, labels):
     correct = preds.eq(labels).double()
     correct = correct.sum()
     return correct*1.0 / len(labels)
+#def homophily(adj_matrix,labels):
+#    connectivity_list = []
+#    for i in range(adj_matrix.shape[0]):
+#        neigh = 0.
+#        count = 0.
+#        for j in range(adj_matrix.shape[0]):
+#            if i==j:
+#                pass
+#            elif adj_matrix[i][j]>1e-6:
+#                neigh = neigh + 1. # number of neighbours
+#                count = count + 1.0*(labels[i]==labels[j]) # neighbours belongs to the same class
+#            else:
+#                pass
+#        print('Node: %d----Ratio: %.4f'%(i,count/neigh))
+#        connectivity_list.append(count/neigh)
+#    return connectivity_list
 
 def homophily(adj_matrix,labels):
     ratio_list = []
-    ## node homophily 
     ## note the adj_matrix do NOT has self-loop
     adj_matrix = adj_matrix.cuda()
     labels = labels.cuda()
@@ -195,28 +210,38 @@ def homophily(adj_matrix,labels):
     for i in range(adj_matrix.shape[0]):
         row = adj_matrix.to_dense()[i].cpu().numpy()
         row[i] = -1
+#        print(np.where(row>1e-6)[0])
+#        print('Corresponding labels:')
+#        print(labels[np.where(row>1e-6)[0]])
         ratio = labels[np.where(row>1e-10)[0]]==labels[i]  
+#        print((torch.mean(ratio*1.0).item()))
         print('Node: %d----Ratio: %.4f'%(i,torch.mean(ratio*1.0).item()))
         ratio_list.append(torch.mean(ratio*1.0).item())
         connectivity_list.append(torch.mean(ratio*1.0).item())
     np.savetxt('Attention_dir/ratio_list.txt',ratio_list)
     return connectivity_list
-def edge_homophily(adj_matrix,labels):
+
+
+
+def new_homophily(adj_matrix,labels):
+    ## from the edges perspecive
+#    connectivity_list = []
+    count = 0.0
+    num_of_edges = 0.0
     adj_matrix = adj_matrix.cuda()
     labels = labels.cuda()
-    homo = 0.0
-    edges = 0.0
     for i in range(adj_matrix.shape[0]):
         row = adj_matrix.to_dense()[i].cpu().numpy()
         row[i] = -1
-        connect_neigh =  labels[np.where(row>1e-10)[0]]==labels[i]
-        edges = edges + np.sum((np.where(row>1e-10)[0]>1e-10)*1.0)
-        homo = homo + torch.sum(connect_neigh*1.0).item()
-    print('Homo is:')
-    print('----------------------------')
-    print(homo)
-    print('Number of Edges:')
-    print(edges)
-    return homo
+        edges = np.sum((row>1e-6))
+        ratio = labels[np.where(row>1e-10)[0]]==labels[i]
+#        print('Node: %d----Total: %.4f------'%(i,torch.sum(ratio).item()))
+        print('Node: %d----Total: %.4f-----Ratio: %.4f'%(i,torch.sum(ratio).item(),torch.mean(ratio*1.0).item()))
+#        print(ratio.float())
+        count = count+torch.sum(ratio)
+        num_of_edges = num_of_edges + edges
+    ## homop = count/(2*num_of_edges)
+    print('Edges :%d '%num_of_edges)
+    return count
 
 

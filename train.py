@@ -4,12 +4,16 @@ from utils import load_citation, accuracy
 import time
 import argparse
 import numpy as np
+import torch
+torch.manual_seed(42)
+torch.cuda.manual_seed(42)
+np.random.seed(42)
+torch.backends.cudnn.deterministic = True
 from scipy import sparse
 from atten_sct_model import ScattterAttentionLayer 
-import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from models import SCT_GAT
+from models import SCT_ATTEN,SCT_GAT
 from torch.optim.lr_scheduler import StepLR
 # Training settings
 parser = argparse.ArgumentParser()
@@ -19,24 +23,24 @@ parser.add_argument('--no-cuda', action='store_true', default=False,
 parser.add_argument('--fastmode', action='store_true', default=False,
                     help='Validate during training pass.')
 parser.add_argument('--seed', type=int, default=42, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=100,
+parser.add_argument('--epochs', type=int, default=200,
                     help='Number of epochs to train.')
-parser.add_argument('--lr', type=float, default=0.001,
+parser.add_argument('--lr', type=float, default=0.005,
                     help='Initial learning rate.')
-parser.add_argument('--weight_decay', type=float, default=5e-6,
+parser.add_argument('--weight_decay', type=float, default=3e-5,
                     help='Weight decay (L2 loss on parameters).')
 parser.add_argument('--l1', type=float, default=0.0,
                     help='Weight decay (L1 loss on parameters).')
 parser.add_argument('--hid', type=int, default=64,
                     help='Number of hidden units.')
-parser.add_argument('--nheads', type=int, default=8,
+parser.add_argument('--nheads', type=int, default=50,
                     help='Number of heads in attention mechism.')
-parser.add_argument('--dropout', type=float, default=0.6,
+parser.add_argument('--dropout', type=float, default=0.9,
                     help='Dropout rate (1 - keep probability).')
 parser.add_argument('--normalization', type=str, default='AugNormAdj',
                     choices=['AugNormAdj'],
                     help='Normalization method for the adjacency matrix.')
-parser.add_argument('--smoo', type=float, default=0.1,
+parser.add_argument('--smoo', type=float, default=0.2,
                     help='Smooth for Res layer')
 
 args = parser.parse_args()
@@ -54,13 +58,34 @@ with open("HOMO_DIR/%s_feature"%args.dataset, "w") as output:
     for item in labels.cpu():
         output.write("%.4f\n" % item)
 
+    
+## check the homophily
+#from utils import homophily
+#homo_list = homophily(adj,labels)
+#print(homo_list)
+#with open("HOMO_DIR/%s"%args.dataset, "w") as output:
+#    for item in homo_list:
+#        output.write("%.4f\n" % item)
+
+
+
+
+
+#from utils import new_homophily
+#homo_list = new_homophily(adj,labels)
+#print('Total Same classes:--------------')
+#print(homo_list)
+## homo = homo_list/(2*num_of_edges)
+#model = SCT_ATTEN(features.shape[1],args.hid,labels.max().item()+1,dropout=args.dropout)
+
+
 #from torch.optim.lr_scheduler import StepLR
 model = SCT_GAT(features.shape[1],args.hid,labels.max().item()+1,dropout=args.dropout,nheads=args.nheads,smoo=args.smoo)
 
 
-for name, param in model.named_parameters():
-    if param.requires_grad:
-        print(name, param.data.shape)
+#for name, param in model.named_parameters():
+#    if param.requires_grad:
+#        print(name, param.data.shape)
 
 if args.cuda:
     model = model.cuda()
@@ -84,6 +109,7 @@ def train(epoch):
     t = time.time()
     model.train()
     optimizer.zero_grad()
+#    output = model(features,adj,A_tilde,adj_sct1,adj_sct2,adj_sct4,[args.order_1,args.sct_inx1],[args.order_2,args.sct_inx2])
     output = model(features,adj,A_tilde,adj_sct1,adj_sct2,adj_sct4)
 
     loss_train = F.nll_loss(output[idx_train], labels[idx_train])
@@ -96,6 +122,7 @@ def train(epoch):
         # deactivates dropout during validation run.
         model.eval()
         output = model(features,adj,A_tilde,adj_sct1,adj_sct2,adj_sct4)
+#    model.eval()
     loss_val = F.nll_loss(output[idx_val], labels[idx_val])
     acc_val = accuracy(output[idx_val], labels[idx_val])
     print('Epoch: {:04d}'.format(epoch+1),
