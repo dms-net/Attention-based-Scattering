@@ -18,3 +18,7 @@ python -u WikiCS_ATT.py --dropout 0.3 --epochs 600 --smoo 0.3 --hid 20 --nheads 
 done
 ```
 
+Requirement:
+* Pytorch Geometric
+* Pytorch
+
