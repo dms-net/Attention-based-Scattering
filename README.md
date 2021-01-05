@@ -1,14 +1,14 @@
-### Code repo for paper:
-#### Geometric Scattering Attention Networks
-#### https://arxiv.org/abs/2010.15010
+Code repo for paper:
+## Geometric Scattering Attention Networks
+* https://arxiv.org/abs/2010.15010
 
 Run (default: Cora)
 ```
 python train.py
 ```
 
-#### For wikics(running for the 20 splits and take mean accuracy)
-#### The splits are randomly selected, see Sec 3.3 in https://arxiv.org/abs/2010.15010
+For wikics(running for the 20 splits and take mean accuracy) <br>
+the splits are randomly selected, see Sec 3.3 in https://arxiv.org/abs/2010.15010
 ```
 for i in $(seq 0 1 19)
 do
