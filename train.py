@@ -53,39 +53,9 @@ if args.cuda:
 #adj, features, labels, idx_train, idx_val, idx_test = load_data()
 adj,adj_p,A_tilde,adj_sct1,adj_sct2,adj_sct4,features, labels, idx_train, idx_val, idx_test = load_citation(args.dataset, args.normalization,args.cuda)
 # Model and optimizer
-
-with open("HOMO_DIR/%s_feature"%args.dataset, "w") as output:
-    for item in labels.cpu():
-        output.write("%.4f\n" % item)
-
-    
-## check the homophily
-#from utils import homophily
-#homo_list = homophily(adj,labels)
-#print(homo_list)
-#with open("HOMO_DIR/%s"%args.dataset, "w") as output:
-#    for item in homo_list:
-#        output.write("%.4f\n" % item)
-
-
-
-
-
-#from utils import new_homophily
-#homo_list = new_homophily(adj,labels)
-#print('Total Same classes:--------------')
-#print(homo_list)
-## homo = homo_list/(2*num_of_edges)
-#model = SCT_ATTEN(features.shape[1],args.hid,labels.max().item()+1,dropout=args.dropout)
-
-
 #from torch.optim.lr_scheduler import StepLR
 model = SCT_GAT(features.shape[1],args.hid,labels.max().item()+1,dropout=args.dropout,nheads=args.nheads,smoo=args.smoo)
 
-
-#for name, param in model.named_parameters():
-#    if param.requires_grad:
-#        print(name, param.data.shape)
 
 if args.cuda:
     model = model.cuda()
