@@ -83,13 +83,7 @@ adj_p = normalizemx(adj)
 features = data.x
 features = torch.FloatTensor(np.array(features))
 labels = data.y 
-#print(labels)
-#print('Max')
-#print(labels.max()+1)
 labels = torch.LongTensor(np.array(labels))
-#print(features.shape)
-#print("========================")
-#print('Loading')
 adj_sct1 = scattering1st(adj_p,1)
 adj_sct2 = scattering1st(adj_p,2)
 adj_sct4 = scattering1st(adj_p,4)
@@ -101,33 +95,14 @@ idx_val = data.val_mask[:,args.data_spilt]
 idx_test = data.test_mask
 np.savetxt('Attention_dir/data_spilt.txt',idx_val, fmt="%5i")
 model = SCT_GAT_wikics(features.shape[1],args.hid,10,dropout=args.dropout,nheads=args.nheads,smoo=args.smoo)
-# run homophily
 adj = sparse_mx_to_torch_sparse_tensor(adj)
-#from utils import new_homophily
-#homo_list = new_homophily(adj,labels)
-#print('Total Same classes:--------------')
-#print(homo_list)
-#for name, param in model.named_parameters():
-#    if param.requires_grad:
-#        print(name, param.data.shape)
 if args.cuda:
     model = model.cuda()
     features = features.cuda()
     A_tilde = A_tilde.cuda()
     adj_p = adj_p.cuda()
     labels = labels.cuda()
-#    idx_train = idx_train.cuda()
-#    idx_val = idx_val.cuda()
-#    idx_test = idx_test.cuda()
 
-
-
-
-#from utils import homophily
-#homo_list = homophily(adj,labels)
-#with open("HOMO_DIR/wikics", "w") as output:
-#    for item in homo_list:
-#        output.write("%.4f\n" % item)
 
 optimizer = optim.Adam(model.parameters(),lr=args.lr, weight_decay=args.weight_decay)
 scheduler = StepLR(optimizer, step_size=50, gamma=0.8)
