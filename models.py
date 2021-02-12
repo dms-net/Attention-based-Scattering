@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch 
 import torch.nn.functional as F
-from layers import GC_withres,NGCN
+from layers import GC_withres
 from atten_sct_model import ScattterAttentionLayer,ScattterAttentionLayer_mul_a
 
 class SCT_ATTEN(nn.Module):
