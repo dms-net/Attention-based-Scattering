@@ -74,21 +74,3 @@ class SCT_GAT_wikics(nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-class SCT_Full(nn.Module):
-    def __init__(self, nfeat, hid, nclass, dropout, nheads,smoo):
-        super(SCT_Full, self).__init__()
-        self.dropout = dropout
-        self.attentions = [ScattterAttentionLayer(nfeat, hid, dropout=dropout) for _ in range(nheads)]
-        for i, attention in enumerate(self.attentions):
-            self.add_module('attention_{}'.format(i), attention)
-#        self.out_att = ScattterAttentionLayer(hid * nheads,nclass, dropout=dropout)
-        self.gc11 = GC_withres(hid * nheads, nclass,smooth=smoo)
-    def forward(self,x,A_tilde,s1_sct,s2_sct,s3_sct):
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = torch.cat([torch.nn.ReLU()(att(x,A_tilde,s1_sct,s2_sct,s3_sct)) for att in self.attentions], dim=1)
-#        x = F.dropout(x, self.dropout, training=self.training)
-#        x = torch.nn.ReLU()(self.out_att(x,A_tilde,s1_sct,s2_sct,s3_sct))
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = self.gc11(x,A_tilde)
-        return F.log_softmax(x, dim=1)
-
